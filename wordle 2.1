@@ -1,11 +1,12 @@
 from random import randint
 import sys
-rword=randint(0,1)
+def wordle():
+    rword=randint(0,6)
+    o=0
 
-print("Подсказка: '*'- буквы нет в загаданном слове,")
-print("'+'- буква есть в этом слове, но стоит не на своем месте")
-f=["python","english"]
-def wordle_2v1():
+    print("Подсказка: '*'- буквы нет в загаданном слове,")
+    print("'+'- буква есть в этом слове, но стоит не на своем месте")
+    f=["python","english","print","version","ocean","input","random"]
     o=0
     w="~~~~~"
 
@@ -14,9 +15,7 @@ def wordle_2v1():
         o=0
         o1=0
         w=input(" ").lower()
-        if w=="version":
-            print("Wordle 2.1 (08.02.25cu)")
-            continue
+
         if len(w) != len(f[rword]):
             print("Недопустимая длина слова(-1 попытка)")
             continue
@@ -36,11 +35,15 @@ def wordle_2v1():
         if o == 0:
             if o1 ==0:
                 break
-    return(o)
+    return(o,w)
 
-o=wordle_2v1()
-if o !=0:
+o,w=wordle()
+if len(w)<2:
     print("Ты проиграл")
     sys.exit()
 else:
-    print("win")
+    if o !=0:
+        print("Ты проиграл")
+        sys.exit()
+    else:
+        print("win")
