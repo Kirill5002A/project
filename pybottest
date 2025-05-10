@@ -1,0 +1,107 @@
+import telebot
+from telebot import types
+import time
+
+TOKEN = "8013130587:AAFRlqwBMWmw5WrvfBMAiiIyaN5L4kWTn94"  
+bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
+
+products = {
+    "ximi": {
+        "Ximi 15 Pro": {
+            "price": 1300,
+            "description": "Хороший телефон за свои деньги",
+            "photo": "https://www.mijia-shop.ru/wp-content/uploads/2024/10/Xiaomi-15-Pro-2.jpg"  
+        },
+        "Redmi Note 12": {
+            "price": 400,
+            "description": "Хороший телефон за свои деньги",
+            "photo": "https://mtscdn.ru/upload/iblock/91c/M7_green_back-0.png"  
+        }
+    },
+    "ipony": {
+        "IPony 15 Pro": {
+            "price": 1200,
+            "description": "Хороший телефон за свои деньги",
+            "photo": "https://rebro-store.ru/upload/iblock/653/bue5rc030pion0doern3egx8n8x39lpb.jpg" 
+        }
+    },
+}
+def check_bot_token():
+    try:
+        bot.get_me()
+        print("Токен рабочий! Бот готов к работе.")
+        return True
+    except Exception as e:
+        print(f"Ошибка проверки токена: {e}")
+        return False
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    if not check_bot_token():
+        bot.send_message(message.chat.id, "⚠️ Ошибка подключения. Проверьте токен бота.")
+        return
+    
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(types.KeyboardButton("Ximi"), 
+               types.KeyboardButton("iPony"),
+               types.KeyboardButton("Samsung"))
+    
+    bot.send_message(message.chat.id, "Выберите бренд:", reply_markup=markup)
+
+@bot.message_handler(func=lambda m: True)
+def handle_message(message):
+    try:
+        if message.text.lower() in products:
+            show_products(message, message.text.lower())
+        else:
+            bot.send_message(message.chat.id, "Используйте кнопки для навигации")
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
+
+def show_products(message, brand):
+    try:
+        markup = types.InlineKeyboardMarkup()
+        for name, data in products[brand].items():
+            markup.add(types.InlineKeyboardButton(
+                text=f"{name} - ${data['price']}",
+                callback_data=f"product_{brand}_{name}"
+            ))
+        bot.send_message(message.chat.id, f"Модели {brand}:", reply_markup=markup)
+    except Exception as e:
+        print(f"Ошибка показа товаров: {e}")
+
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback(call):
+    try:
+        if call.data.startswith("product_"):
+            _, brand, name = call.data.split("_", 2)
+            product = products[brand][name]
+            
+            try:
+                bot.send_photo(
+                    call.message.chat.id,
+                    photo=product['photo'],
+                    caption=f"<b>{name}</b>\nЦена: ${product['price']}\n{product['description']}"
+                )
+            except Exception as e:
+                print(f"Ошибка отправки фото: {e}")
+                bot.send_message(
+                    call.message.chat.id,
+                    f"<b>{name}</b>\nЦена: ${product['price']}\n{product['description']}\n\nФото временно недоступно"
+                )
+    except Exception as e:
+        print(f"Ошибка обработки callback: {e}")
+
+if __name__ == "__main__":
+    print("Проверка бота...")
+    if check_bot_token():
+        print("Бот запускается...")
+        while True:
+            try:
+                bot.infinity_polling()
+            except Exception as e:
+                print(f"Ошибка polling: {e}")
+                time.sleep(5)
+    else:
+        print("⚠️ Неверный токен бота!")
