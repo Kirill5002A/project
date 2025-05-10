@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import time
 
-TOKEN = "8013130587:AAFRlqwBMWmw5WrvfBMAiiIyaN5L4kWTn94"  
+TOKEN = ""  
 bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
 
 products = {
