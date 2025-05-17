@@ -1,0 +1,114 @@
+import telebot
+from telebot import types
+
+TOKEN = ""  
+bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
+
+products = {
+    "ximi": {
+        "Ximi 15 Pro(12+512)": {
+            "price": 1300,
+            "description": "Лучший для профессиональных фотографов",
+            "photo": "https://www.mijia-shop.ru/wp-content/uploads/2024/10/Xiaomi-15-Pro-2.jpg",
+            "nal": 2
+        },
+        "Ximi 14 pro(12+256)": {
+            "price": 1150,
+            "description": "Отличный для игр",
+            "photo": "https://ru.etoren.com/upload/images/0.14271700_1698818449_xiaomi-14-pro-5g-dual-sim-256gb-green-12gb-ram-china-version.jpg"  
+        }
+    },
+    "ipony": {
+        "IPony 15 Pro 128GB": {
+            "price": 1200,
+            "description": "Таким даже фильм можно снять",
+            "photo": "https://appdom.ru/image/cache/catalog/iphone/ip15pro/apple-iphone-15-pro-natural-titanium-1x-1000x1000.jpg" 
+        },
+        "IPony 16 128GB": {
+            "price": 1150,
+            "description": "Недорогой продукт appel с производительностью дорогого",
+            "photo": "https://rebro-store.ru/upload/iblock/653/bue5rc030pion0doern3egx8n8x39lpb.jpg" 
+        },
+        "IPony 16 256GB": {
+            "price": 1250,
+            "description": "Недорогой продукт appel с производительностью дорогого",
+            "photo": "https://rebro-store.ru/upload/iblock/653/bue5rc030pion0doern3egx8n8x39lpb.jpg" 
+        }    
+    },
+    "smug":{
+        "SMUG S24 ULTRA": {
+            "price": 1300,
+            "description": "Очень мощный, идеален для игр",
+            "photo": "https://appdom.ru/image/cache/catalog/galaxy/s24ultra/samsung-galaxy-s24-ultra-vioelt-titanium-1000x1000.jpg"
+        },
+        "SMUG S25 ULTRA": {
+            "price": 1500,
+            "description": "Самый мощный телефон от SMUG. В нем процессор от ноутбука",
+            "photo": "https://hi-stores.ru/upload/iblock/815/9k4def0w37lyunuzjgefl3s2b5qmn2gu.jpg"
+        },
+        "SMUG S25 ": {
+            "price": 900,
+            "description": "Недорогой, но достаточно мощный телефон. Идеально родходит для повседненевного использования",
+            "photo": "https://images.samsung.com/kz_ru/smartphones/galaxy-s25/buy/product-color/product_color_pinkGold_plus_PC.png"
+        }
+    },
+}
+
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(types.KeyboardButton("Ximi"), 
+               types.KeyboardButton("iPony"),
+               types.KeyboardButton("SMUG")),
+    
+    bot.send_message(message.chat.id, f"Привет, я бот по продаже самых лучних телефонов! Просто выбери нужный с помощью клавиш, и свяжись с @exampleusername ", reply_markup=markup)
+
+@bot.message_handler(func=lambda m: True)
+def handle_message(message):
+    try:
+        if message.text.lower() in products:
+            show_products(message, message.text.lower())
+        else:
+            bot.send_message(message.chat.id, "Используйте кнопки для навигации")
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
+
+def show_products(message, brand):
+    try:
+        markup = types.InlineKeyboardMarkup()
+        for name, data in products[brand].items():
+            markup.add(types.InlineKeyboardButton(
+                text=f"{name} - ${data['price']}",
+                callback_data=f"product_{brand}_{name}"
+            ))
+        bot.send_message(message.chat.id, f"Модели {brand}:", reply_markup=markup)
+    except Exception as e:
+        print(f"Ошибка показа товаров: {e}")
+
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback(call):
+    try:
+        if call.data.startswith("product_"):
+            _, brand, name = call.data.split("_", 2)
+            product = products[brand][name]
+            
+            try:
+                bot.send_photo(
+                    call.message.chat.id,
+                    photo=product['photo'],
+                    caption=f"<b>{name}</b>\nЦена: ${product['price']}\n{product['description']}",
+                )
+            except Exception as e:
+                print(f"Ошибка отправки фото: {e}")
+                bot.send_message(
+                    call.message.chat.id,
+                    f"<b>{name}</b>\nЦена: ${product['price']}\n{product['description']}\n\nФото временно недоступно"
+                )
+    except Exception as e:
+        print(f"Ошибка обработки callback: {e}")
+
+if __name__ == "__main__":
+    bot.infinity_polling()
